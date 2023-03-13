@@ -1,10 +1,7 @@
-#from PyQt5.QtCore import QCoreApplication
-#from PyQt5.QtBluetooth import QBluetoothDeviceDiscoveryAgent, QLowEnergyController, QBluetoothDeviceInfo
+#!/usr/bin/env python
 
 from PyQt6.QtBluetooth import QBluetoothDeviceDiscoveryAgent, QBluetoothDeviceInfo, QLowEnergyController
 from PyQt6.QtCore import QCoreApplication
-
-import time
 import enum
 
 class BluetoothScanner:
@@ -15,7 +12,7 @@ class BluetoothScanner:
         BLE_DISCOVERY_FINISHED      = 0x02
 
     DEFAULT_DEVICE_NAME_FILTER = "CONTI_"
-    m_device = [QBluetoothDeviceInfo()]
+    m_device = list()
     m_device_name_filter = str(DEFAULT_DEVICE_NAME_FILTER)
 
     def __init__(self):
@@ -40,7 +37,9 @@ class BluetoothScanner:
         self.mStatus = self.DiscoveryStatus.BLE_DISCOVERY_FINISHED
         # This method is called when a device is discovered during the scan
         # Print the device's address and name to the console
+        
         if(True ==  str(device_info.name()).startswith(self.m_device_name_filter)):
+            self.m_device.append(device_info)
             print(f"\tFound device: {device_info.address().toString()} , Name {device_info.name()}")
             print(f"Connecting to device: {device_info.address().toString()}")
             self.controller = QLowEnergyController.createCentral(device_info)
@@ -52,15 +51,16 @@ class BluetoothScanner:
     def get_queued_devices(self):
         print("Get discovered devices list :")
         for dev in self.m_device:
-            print(f"DEVICE: {dev.address().toString()}")
+            print(f"\tFound device: {dev.address().toString()} , Name {dev.name()}")
         return self.m_device
 
     def set_filter(self, device_name:str = DEFAULT_DEVICE_NAME_FILTER ):
         self.m_device_name_filter = device_name
 
     def discovery_finished(self, *args, **kwargs):
+        dev_list = self.get_queued_devices()
         self.controller.connectToDevice()
-        #dev_list = self.get_queued_devices()
+        
 
 
     def connected(self):
@@ -89,5 +89,13 @@ if __name__ == '__main__':
     # Run the event loop until the discovery process is finished
     app.exec()
 
-    #while(BluetoothScanner.DiscoveryStatus.BLE_DISCOVERY_FINISHED  != scanner.GetDiscoveryStatus()) :
-    #    time.sleep(1)
+
+#[cdd@cdd-pc scripts]$ /bin/python /home/cdd/scripts/PyQt6_examples/scanner_connect.py
+#qt.bluetooth.bluez: Missing CAP_NET_ADMIN permission. Cannot determine whether a found address is of random or public type.
+#Scanning for Bluetooth devices...
+#        Found device: 56:AA:00:6B:64:0F , Name Kaabia's A51
+#Connecting to device: 56:AA:00:6B:64:0F
+#qt.bluetooth: Using BlueZ LE DBus API
+#Get discovered devices list :
+#Erreur du bus (core dumped)
+#[cdd@cdd-pc scripts]$ 
