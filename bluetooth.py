@@ -41,24 +41,46 @@ class Bluetoothctl:
     def get_output(self):
         return self.process.stdout.readline().decode().strip()
 
-    def start_scan(self):
+    def StartDiscovering(self):
         self.send_command("scan on")
 
-    def stop_scan(self):
+    def StopDiscovering(self):
         self.send_command("scan off")
 
-    def get_devices(self):
-        self.send_command("devices")
-        devices = []
+    def GetQueuedqueued_Devices(self):
+        self.send_command("queued_devices")
+        queued_devices = []
         while True:
             output = self.get_output()
             if output.startswith("Device "):
                 address = output[7:]
-                devices.append(address)
+                queued_devices.append(address)
                 self._run_callback("discovered", address)
             elif output == "":
                 break
-        return devices
+        return queued_devices
+
+    def start_advertising(self, name):
+        cmd = 'echo -e "discoverable on\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = 'echo -e "pairable on\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "agent NoInputNoOutput\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "remove {self.mac_address}\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "add ad\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "select-adv-packet 0\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "add-name {name}\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "show\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "power on\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
+        cmd = f'echo -e "advertise on\\nquit" | bluetoothctl'
+        subprocess.call(cmd, shell=True)
 
     def pair_device(self, address):
         self.send_command(f"pair {address}")
@@ -96,31 +118,38 @@ def device_discovered_callback(address):
 
 if __name__ == "__main__":
 
-    bt = Bluetoothctl()
-    bt.connected.connect(device_connected_callback)
-    bt.disconnected(device_connected_callback)
-    bt.discovered(device_discovered_callback)
+    ble_dev = Bluetoothctl()
 
-    bt.start_scan()
-
-    # Wait for devices to be discovered
+    # Advertise examle
+    ble_dev.StartAdvertising()
     time.sleep(10)
+    ble_dev.StopAdvertising()
 
-    bt.stop_scan()
-    devices = bt.get_devices()
-    print("Devices:")
-    for device in devices:
-        print(device)
 
-    # Connect to first device found
-    if devices:
-        device_to_connect = devices[0]
-        bt.connect_device(device_to_connect)
 
-    # Wait for device to be connected
-    time.sleep(10)
+    # # Connect example
+    # ble_dev.connected.connect(device_connected_callback)
+    # ble_dev.disconnected(device_connected_callback)
+    # ble_dev.discovered(device_discovered_callback)
+    # ble_dev.StartDiscovering()
+    # # Wait for devices to be discovered
+    # time.sleep(10)
+    # # Stop discovering
+    # ble_dev.StopDiscovering()
+    # # Get queued BLE devices
+    # queued_devices = ble_dev.GetQueuedqueued_Devices()
+    # # Print available scanned BLE devices
+    # print("queued_Devices:")
+    # for device in queued_devices:
+    #     print(device)
+    # # Connect to first device found
+    # if queued_devices:
+    #     device_to_connect = queued_devices[0]
+    #     ble_dev.connect_device(device_to_connect)
+    # # Wait for device to be connected
+    # time.sleep(10)
+    # # Disconnect from device
+    # ble_dev.disconnect_device(device_to_connect)
 
-    bt.disconnect_device(device_to_connect)
-
-    bt.stop()
+    ble_dev.stop()
 
