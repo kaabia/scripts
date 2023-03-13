@@ -3,6 +3,7 @@
 from PyQt6.QtBluetooth import QBluetoothDeviceDiscoveryAgent, QBluetoothDeviceInfo, QLowEnergyController
 from PyQt6.QtCore import QCoreApplication, QLoggingCategory
 import enum
+from time import sleep
 
 class BluetoothScanner:
 
@@ -12,7 +13,7 @@ class BluetoothScanner:
         BLE_DISCOVERY_FINISHED      = 0x02
 
     DEFAULT_DEVICE_NAME_FILTER = "CONTI_"
-    m_device = list()
+
     m_device_name_filter = str(DEFAULT_DEVICE_NAME_FILTER)
     mStatus = DiscoveryStatus.BLE_DISCOVERY_NOT_STARTED
 
@@ -22,11 +23,13 @@ class BluetoothScanner:
         # Create a QBluetoothDeviceDiscoveryAgent object
         self.discovery_agent = QBluetoothDeviceDiscoveryAgent()
         # set Low Energy Discovery Timeout to 10 seconds
-        self.discovery_agent.setLowEnergyDiscoveryTimeout(3000)
+        self.discovery_agent.setLowEnergyDiscoveryTimeout(5000)
         # Connect the deviceDiscovered signal to the device_discovered method
         self.discovery_agent.deviceDiscovered.connect(self.device_discovered)
         # Connect the finished signal to the quit method of the QCoreApplication object
         self.discovery_agent.finished.connect(self.discovery_finished)
+
+        self.m_device = list()
 
     def start(self):
         # Start the device discovery process
@@ -34,25 +37,14 @@ class BluetoothScanner:
         self.discovery_agent.start(QBluetoothDeviceDiscoveryAgent.DiscoveryMethod.LowEnergyMethod)
         self.mStatus = self.DiscoveryStatus.BLE_DISCOVERY_ONGOING
 
-    #def device_discovered(self, device_info):
-    def device_discovered(self, device_info, **kwargs):
+    def device_discovered(self, device_info):
         # This method is called when a device is discovered during the scan
         # Print the device's address and name to the console
         if(True ==  str(device_info.name()).startswith(self.m_device_name_filter)):
-            self.m_device.append(device_info)
             print(f"\tFound device: {device_info.address().toString()} , Name {device_info.name()}")
-            print(f"Connecting to device: {device_info.address().toString()}")
-            self.controller = QLowEnergyController.createCentral(self.m_device[0])
+            self.m_device.append(QBluetoothDeviceInfo(device_info))
 
     def get_queued_devices(self):
-        print("Get discovered devices list :")
-        #discovered_devices  = self.discovery_agent.discoveredDevices()
-        #for dev in discovered_devices:
-        #    print(f"DEV : Mac = {dev.address().toString()}, Name = {dev.name()}")
-
-        for dev in self.m_device:
-            print(f"DEV : Mac = {dev.address().toString()}, Name = {dev.name()}")
-
         return self.m_device
 
     def set_filter(self, device_name:str = DEFAULT_DEVICE_NAME_FILTER ):
@@ -60,21 +52,35 @@ class BluetoothScanner:
 
     def discovery_finished(self, *args, **kwargs):
         self.mStatus = self.DiscoveryStatus.BLE_DISCOVERY_FINISHED
-        #self.get_queued_devices()
+        device_list = self.get_queued_devices()
+        print(f"Get discovered devices list : len = {len(device_list)}")
+        for dev in device_list:
+            print(f"DEV : Mac = {dev.address().toString()}, Name = {dev.name()}")
+        conn_dev = QBluetoothDeviceInfo(device_list[0])
+        self.connectTo(conn_dev)
+
+    def connectTo(self, dev):
+        print(f"Connecting to device: {dev.address().toString()}")
+        self.controller = QLowEnergyController.createCentral(dev)
         self.controller.connected.connect(self.connected)
         self.controller.disconnected.connect(self.disconnected)
         self.controller.errorOccurred.connect(self.ConnectionError)
         self.controller.connectToDevice()
-        print(f"Connect requested")
+
 
     def connected(self):
         print("Connected to device!")
+        sleep(10)
+        print("Time to disconnect from device!")
+        self.controller.disconnect()
 
     def disconnected(self):
         print("Disconnected from device!")
+        QCoreApplication.quit()
 
     def ConnectionError(self):
         print("Error Occured")
+        QCoreApplication.quit()
 
     def GetDiscoveryStatus(self):
         return self.mStatus
