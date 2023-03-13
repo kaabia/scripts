@@ -31,7 +31,10 @@ class BluetoothAdvertiser:
         # Add caracteristic
         self.charData = QLowEnergyCharacteristicData()
         self.charData.setUuid(QBluetoothUuid(QBluetoothUuid.CharacteristicType.HeartRateMeasurement))
-        self.charData.setValue(QByteArray(2,0))
+        val = QByteArray()
+        val.append(chr(0).encode())
+        val.append(chr(0).encode())
+        self.charData.setValue(val)
         self.charData.setProperties(QLowEnergyCharacteristic.PropertyType.Notify)
         # Add Service
         self.serviceData = QLowEnergyServiceData()
