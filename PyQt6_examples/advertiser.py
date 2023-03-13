@@ -24,7 +24,7 @@ class BluetoothAdvertiser:
          # Include power level in advertising payload
         self.m_advertisingData.setIncludePowerLevel(True)
         # Set Device name
-        self.m_advertisingData.setLocalName("CONTI_001")
+        self.m_advertisingData.setLocalName("CONTI_CDD")
         # Set default Heart rate service to offerin its minimal form
         self.m_advertisingData.setServices([QBluetoothUuid(QBluetoothUuid.ServiceClassUuid.HeartRate)])
 
@@ -50,7 +50,7 @@ class BluetoothAdvertiser:
         #self.leController.connect(self.controller_notification)
         # Start advertising with the given advertising data
         self.leController.startAdvertising(QLowEnergyAdvertisingParameters(),
-                                           self.m_advertisingData)
+                                           self.m_advertisingData, self.m_advertisingData)
 
     def controller_notification(self, characteristic, newValue):
         print(f"Notification received. Characteristic: {characteristic.uuid()}, Value: {newValue}")
