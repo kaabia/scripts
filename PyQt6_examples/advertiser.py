@@ -30,13 +30,13 @@ class BluetoothAdvertiser:
 
         # Add caracteristic
         self.charData = QLowEnergyCharacteristicData()
-        self.charData.setUuid(QBluetoothUuid.CharacteristicType.HeartRateMeasurement)
+        self.charData.setUuid(QBluetoothUuid(QBluetoothUuid.CharacteristicType.HeartRateMeasurement))
         self.charData.setValue(QByteArray(2,0))
         self.charData.setProperties(QLowEnergyCharacteristic.PropertyType.Notify)
         # Add Service
         self.serviceData = QLowEnergyServiceData()
         self.serviceData.setType(QLowEnergyServiceData.ServiceType.ServiceTypePrimary)
-        self.serviceData.setUuid(QBluetoothUuid.ServiceClassUuid.HeartRate)
+        self.serviceData.setUuid(QBluetoothUuid(QBluetoothUuid.ServiceClassUuid.HeartRate))
         self.serviceData.addCharacteristic(self.charData)
         # Advertising and Listening for Incoming Connections
         self.leController = QLowEnergyController.createPeripheral()
