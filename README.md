@@ -75,3 +75,6 @@ python3
 >>> from PySide6.QtCore import Qt
 >>> print(Qt.Version())
 If there are no errors, then PySide6 is installed and working properly.
+
+Useful Link :
+https://ukbaz.github.io/howto/python_gio_1.html
