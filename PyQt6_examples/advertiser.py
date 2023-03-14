@@ -4,13 +4,12 @@
 """PyQt6 port of the bluetooth/heartrate-server example from Qt v6.x"""
 
 from enum import Enum
-from PyQt6.QtCore import QByteArray, QCoreApplication, QLoggingCategory
+from PyQt6.QtCore import QByteArray, QCoreApplication, QLoggingCategory, QTimer
 from PyQt6.QtBluetooth import (QBluetoothUuid, QLowEnergyAdvertisingData,
                                  QLowEnergyAdvertisingParameters,
                                  QLowEnergyCharacteristic,
                                  QLowEnergyCharacteristicData,
                                  QLowEnergyController,
-                                 QLowEnergyDescriptorData,
                                  QLowEnergyServiceData)
 
 class BluetoothAdvertiser:
@@ -26,7 +25,6 @@ class BluetoothAdvertiser:
         # Set Device name
         self.m_advertisingData.setLocalName("CONTI_CDD")
         # Set default Heart rate service to offerin its minimal form
-        self.m_advertisingData.setServices([QBluetoothUuid(QBluetoothUuid.ServiceClassUuid.HeartRate)])
 
         # Add caracteristic
         self.charData = QLowEnergyCharacteristicData()
@@ -35,7 +33,7 @@ class BluetoothAdvertiser:
         val.append(chr(0).encode())
         val.append(chr(0).encode())
         self.charData.setValue(val)
-        self.charData.setProperties(QLowEnergyCharacteristic.PropertyType.Notify)
+        self.charData.setProperties(QLowEnergyCharacteristic.PropertyType.Read)
 
         # Add Service
         self.serviceData = QLowEnergyServiceData()
@@ -44,17 +42,58 @@ class BluetoothAdvertiser:
         self.serviceData.addCharacteristic(self.charData)
         # Advertising and Listening for Incoming Connections
         self.leController = QLowEnergyController.createPeripheral()
+        # Connect leController signal to callback functions
+        self.leController.connected.connect(self.connected)
+        self.leController.disconnected.connect(self.disconnected_from_device)
+        self.leController.stateChanged.connect(self.state_changed)
+        self.leController.errorOccurred.connect(self.error_hander)
+        # Add service
         self.leController.addService(self.serviceData)
 
+    # Controller signals
+    def error_hander(self):
+        print("Error Occured !")
+        QCoreApplication.quit()
+
+    def state_changed(self, *args, **Kwargs):
+        if args[0] == QLowEnergyController.ControllerState.AdvertisingState:
+            print("ADVERTISER STATE >> ADVERTISING ")
+        elif args[0] == QLowEnergyController.ControllerState.UnconnectedState:
+            print("ADVERTISER STATE >> IDLE ")
+        elif args[0] == QLowEnergyController.ControllerState.ConnectingState:
+            print("ADVERTISER STATE >> CONNECTING ")
+        elif args[0] == QLowEnergyController.ControllerState.ConnectedState:
+            print("ADVERTISER STATE >> CONNECTED ")
+            # Disconnet device after 10 seconds
+            QTimer.singleShot(10000, self.disconnect)
+        elif args[0] == QLowEnergyController.ControllerState.DiscoveringState:
+            print("ADVERTISER STATE >> DISCOVERING ")
+        elif args[0] == QLowEnergyController.ControllerState.DiscoveredState:
+            print("ADVERTISER STATE >> DISCOVERED ")
+        elif args[0] == QLowEnergyController.ControllerState.ClosingState:
+            print("ADVERTISER STATE >> CLOSING ")
+
+    def disconnected_from_device(self):
+        print("Device Disconnected")
+
+    def connected(self):
+        print("Device Connected")
+
+    # APIs
     def startAdvertising(self):
-        #self.leController.connect(self.controller_notification)
         # Start advertising with the given advertising data
         self.leController.startAdvertising(QLowEnergyAdvertisingParameters(),
                                            self.m_advertisingData, self.m_advertisingData)
 
-    def controller_notification(self, characteristic, newValue):
-        print(f"Notification received. Characteristic: {characteristic.uuid()}, Value: {newValue}")
+    def stopAdvertising(self):
+        # Stop advertising 
+        print("Stop advertising is requested ")
+        self.leController.stopAdvertising()
 
+    def disconnect(self):
+        # Disconnect from remote BLE device
+        print("Disconnect from device is requested ")
+        self.leController.disconnectFromDevice()
 
 if __name__ == '__main__':
     # Create a QCoreApplication object to run the event loop
