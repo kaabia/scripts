@@ -14,7 +14,7 @@ from PyQt6.QtBluetooth import (QBluetoothUuid, QLowEnergyAdvertisingData,
 
 class BluetoothAdvertiser:
     def __init__(self) -> None:
-        QLoggingCategory.setFilterRules("qt.bluetooth* = true")
+        #QLoggingCategory.setFilterRules("qt.bluetooth* = true")
         #! [Advertising Data]
         # Set up Advertising Data
         self.m_advertisingData =  QLowEnergyAdvertisingData()
